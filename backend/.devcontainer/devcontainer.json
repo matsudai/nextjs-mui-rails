@@ -1,0 +1,22 @@
+{
+  "name": "Backend",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      "uid": "${localEnv:UID:1000}",
+      "gid": "${localEnv:GID:1000}",
+      "app_root": "${containerWorkspaceFolder}"
+    }
+  },
+  "containerEnv": {},
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "rebornix.Ruby"
+      ]
+    }
+  },
+  "postCreateCommand": "bundle",
+  "remoteUser": "ruby",
+  "runArgs": ["--network=nextjs-mui-rails_default"]
+}

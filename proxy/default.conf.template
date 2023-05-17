@@ -1,0 +1,49 @@
+server {
+    listen ${PROXY_PORT};
+    server_name ${PROXY_NAME};
+
+    # Proxyのヘルスチェックです。
+    location /healthcheck {
+      return 200;
+    }
+
+    client_max_body_size 64M;
+
+    location ~ ^/api {
+        # # （１）Nginxの前にLBがある場合はLBのX-Forwarded-For + NginxのIPを設定します。
+        # proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        # # （２）Nginxがクライアントに公開されている場合はクライアントのIPを設定します。
+        # proxy_set_header X-Forwarded-For $remote_addr;
+        # proxy_set_header X-Forwarded-Host $host;
+        # proxy_set_header X-Forwarded-Proto $scheme;
+
+        # クライアントのIPまたは、set_real_ip_from/real_ip_recursiveが設定されている場合は最後の非信頼IPを設定します。
+        proxy_set_header X-Real-IP $remote_addr;
+
+        proxy_set_header Host 127.0.0.1;
+        proxy_pass ${BACKEND_ENDPOINT};
+    }
+
+    location / {
+        # # （１）Nginxの前にLBがある場合はLBのX-Forwarded-For + NginxのIPを設定します。
+        # proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        # （２）Nginxがクライアントに公開されている場合はクライアントのIPを設定します。
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # クライアントのIPまたは、set_real_ip_from/real_ip_recursiveが設定されている場合は最後の非信頼IPを設定します。
+        proxy_set_header X-Real-IP $remote_addr;
+
+        # [DEBUG] Next.jsの開発モード専用の設定です。
+        # HMR（Hot Module Replacement）を利用できるようにします。
+        # https://nextjs.org/docs/upgrading#nextjs-hmr-connection-now-uses-a-websocket
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        proxy_set_header Host 127.0.0.1;
+        proxy_pass ${FRONTEND_ENDPOINT};
+    }
+}

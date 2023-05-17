@@ -1,0 +1,46 @@
+version: "3.8"
+services:
+  nextjs-mui-rails_proxy: # 開発用
+    image: nginx:1.23.3
+    volumes:
+      - ./proxy/default.conf.template:/etc/nginx/templates/default.conf.template
+    ports:
+      - "0.0.0.0:3000:80"
+    environment:
+      - PROXY_PORT=80
+      - PROXY_NAME=localhost
+      - BACKEND_ENDPOINT=http://nextjs-mui-rails_backend:3000
+      - FRONTEND_ENDPOINT=http://nextjs-mui-rails_frontend:3000
+    depends_on:
+      nextjs-mui-rails_backend:
+        condition: service_started
+      nextjs-mui-rails_frontend:
+        condition: service_started
+  nextjs-mui-rails_backend:
+    build:
+      context: ./backend
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        - uid=${UID:-1000}
+        - gid=${GID:-1000}
+        - app_root=/workspace
+    working_dir: /workspace
+    volumes:
+      - ./backend:/workspace
+    command: >
+      /bin/sh -c "rm -rf tmp/pids/server.pid && bundle && rails s -b 0.0.0.0"
+  nextjs-mui-rails_frontend:
+    build:
+      context: ./frontend
+      dockerfile: .devcontainer/Dockerfile
+    working_dir: /workspace
+    volumes:
+      - ./frontend:/workspace
+    command: >
+      /bin/sh -c "yarn && yarn dev"
+networks:
+  # DevContainerとネットワークを共有するため
+  # defaultネットワークをComposeで管理しません。
+  default:
+    external: true
+    name: nextjs-mui-rails_default
